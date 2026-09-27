@@ -1,5 +1,5 @@
 package utils
-// import "fmt"
+import "fmt"
 type Response struct{
 	version string
 	code string
@@ -64,6 +64,9 @@ func (response *Response) Setallbytes (){
 
 func (response *Response) Setcontentlengthheader (length int){
 	response.contentlengthheader = length
+	 response.headers = append(response.headers, map[string]string{
+        "Content-Length": fmt.Sprintf("%d", length),
+    })
 }
 // make sure this is always called
 func (response *Response) Setnosniffheader() {

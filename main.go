@@ -21,7 +21,8 @@ func main() {
 	// use prepared statemetns even tho docs say unnessesary
 	conn, err := pgx.Connect(
 		context.Background(),
-		"postgres://"+os.Getenv("LOCAL_DB_USER")+":"+os.Getenv("LOCAL_DB_PASSWORD")+"@postgres:5432/"+os.Getenv("LOCAL_DB"))
+		// "postgres://"+os.Getenv("LOCAL_DB_USER")+":"+os.Getenv("LOCAL_DB_PASSWORD")+"@postgres:5432/"+os.Getenv("LOCAL_DB"))
+		"postgres://" + os.Getenv("LOCAL_DB_USER") + ":" + os.Getenv("LOCAL_DB_PASSWORD") + "@localhost:5432/" + os.Getenv("LOCAL_DB"))
 	if err != nil {
 		log.Fatal("error connecting to postgres", err)
 	}
@@ -68,6 +69,22 @@ func main() {
 	route.SetRoute("GET", "/api/chats", router.GetMessages, &router)
 	route.SetRoute("PATCH", "/api/chats/", router.UpdateMessage, &router)
 	route.SetRoute("DELETE", "/api/chats/", router.DeleteMessage, &router)
+	route.SetRoute("GET", "/public/cat.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/dog.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/eagle.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/elephant-small.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/elephant.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/favicon.ico", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/flamingo.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/jumping-cat.gif", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/kitten.jpg", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/user.webp", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/alertManager.js", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/chat.js", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/search-users.js", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/settings.js", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/utils.js", router.GetPublicFile, &router)
+	route.SetRoute("GET", "/public/videos.js", router.GetPublicFile, &router)
 
 	ln, err := net.Listen("tcp", ":8080")
 	if err != nil {
@@ -86,19 +103,26 @@ func main() {
 }
 
 func handleConnection(conn net.Conn, router *utils.Router) {
-	requestObj := utils.Request{}
-	response := utils.Response{}
-	//handle larger requests somehow
-	bytes := make([]byte, 4096)
-	n, err := conn.Read(bytes)
-	if err != nil {
-		fmt.Println("Encountered an error", err)
-		conn.Close()
-		return
-	}
-	requestStr := string(bytes[:n])
-	utils.Parse(requestStr, &requestObj)
-	router.RouteTo(&requestObj, &response)
-	conn.Write(response.Bytes)
 	defer conn.Close()
+
+	for {
+		requestObj := utils.Request{}
+		response := utils.Response{}
+		//handle larger requests somehow
+		bytes := make([]byte, 4096)
+		n, err := conn.Read(bytes)
+		if err != nil {
+			fmt.Println("Encountered an error", err)
+			return
+		}
+		requestStr := string(bytes[:n])
+		utils.Parse(requestStr, &requestObj)
+		closeConnection := utils.ParseConnection(requestObj.Headers)
+		router.RouteTo(&requestObj, &response)
+		conn.Write(response.Bytes)
+		if closeConnection {
+			return
+		}
+		
+	}
 }

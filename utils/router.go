@@ -51,9 +51,11 @@ func (router *Router) RouteTo(request *Request, response *Response) {
 	if len(request.path) >= len("/api/chats/") {
 		chatPath = request.path[:len("/api/chats/")]
 	}
-	parts := strings.Split(request.path, ".")
-	path := parts[0]
-	request.path = path
+	if publicPath != "/public" {
+		parts := strings.Split(request.path, ".")
+		path := parts[0]
+		request.path = path
+	}
 	for _, route := range router.route {
 
 		if route.method == request.method && route.path == request.path {
@@ -102,10 +104,23 @@ func ParseHeaders(request []map[string]string) string {
 	return ""
 }
 
+func ParseConnection(request []map[string]string) bool {
+	close := false
+	for j := range request {
+		for key, value := range request[j] {
+			if key == "Connection" && value == "close" {
+				close = true
+				return close
+			}
+		}
+	}
+	return false
+}
+
 func (router *Router) DeleteMessage(request Request, response *Response) {
 	parts := strings.Split(request.path, "/")
 	messageid := parts[3]
-	authToken := ParseHeaders(request.headers)
+	authToken := ParseHeaders(request.Headers)
 
 	var author string
 	var id string
@@ -160,7 +175,7 @@ func (router *Router) DeleteMessage(request Request, response *Response) {
 func (router *Router) UpdateMessage(request Request, response *Response) {
 	parts := strings.Split(request.path, "/")
 	messageid := parts[3]
-	authToken := ParseHeaders(request.headers)
+	authToken := ParseHeaders(request.Headers)
 	var author string
 	var id string
 	var content string
@@ -273,7 +288,7 @@ func (router *Router) ChatHandler(request Request, response *Response) {
 	var userId string
 
 	// call func to iterate over headers and get set cookie header id and then fetch that id from db and get info
-	existingId := ParseHeaders(request.headers)
+	existingId := ParseHeaders(request.Headers)
 	if existingId != "" {
 		row := router.DB.QueryRow(
 			context.Background(),
@@ -428,12 +443,26 @@ func (router *Router) GetFile(request Request, response *Response) {
 
 func (router *Router) GetPublicFile(request Request, response *Response) {
 	var path string
-	if strings.Contains(request.path, "js") {
-		path = request.path + ".js"
+	// if strings.Contains(request.path, "js") {
+	// 	path = request.path + ".js"
+	// }else if strings.Contains(request.path, "jpg") {
+	// 	path = request.path + ".jpg"
+	// }else if strings.Contains(request.path, "ico") {
+	// 	path = request.path + ".ico"
+	// }else if strings.Contains(request.path, "webp") {
+	// 	path = request.path + ".webp"
+	// }else if strings.Contains(request.path, "gif") {
+	// 	path = request.path + ".gif"
+	// }else {
+	// 	path = request.path + ".html"
+	// }
+
+	extension := GetMimeType(request.path)
+	if extension != "html" {
+		path = request.path
 	} else {
 		path = request.path + ".html"
 	}
-	// add images/icons
 
 	body, err := os.ReadFile("." + path)
 	if err != nil {
@@ -463,25 +492,32 @@ func (router *Router) GetPublicFile(request Request, response *Response) {
 	response.Setversion(request.version)
 	response.Setmessage("OK")
 	response.Setcode("200")
-	extension := GetMimeType(path)
+	// extension := GetMimeType(path)
 	if extension == "jpg" {
-		//later
-		return
+		response.Setheaders([]map[string]string{{"Content-Type": "image/jpeg"}})
+		response.Setnosniffheader()
+		response.Setbodybinary(body)
+		response.Setcontentlengthheader(len(body))
 	} else if extension == "js" {
 		response.Setheaders([]map[string]string{{"Content-Type": "text/javascript"}})
 		response.Setnosniffheader()
 		response.Setbodytext(string(body))
 		response.Setcontentlengthheader(len(body))
-
 	} else if extension == "ico" {
-		//later
-		return
+		response.Setheaders([]map[string]string{{"Content-Type": "image/x-icon"}})
+		response.Setnosniffheader()
+		response.Setbodybinary(body)
+		response.Setcontentlengthheader(len(body))
 	} else if extension == "gif" {
-		//later
-		return
+		response.Setheaders([]map[string]string{{"Content-Type": "image/gif"}})
+		response.Setnosniffheader()
+		response.Setbodybinary(body)
+		response.Setcontentlengthheader(len(body))
 	} else if extension == "webp" {
-		//later
-		return
+		response.Setheaders([]map[string]string{{"Content-Type": "image/webp"}})
+		response.Setnosniffheader()
+		response.Setbodybinary(body)
+		response.Setcontentlengthheader(len(body))
 	} else if extension == "html" {
 		layout, _ := os.ReadFile("public/layout/layout.html")
 		rendered := strings.Replace(
@@ -497,7 +533,6 @@ func (router *Router) GetPublicFile(request Request, response *Response) {
 	}
 
 	response.Setallbytes()
-
 }
 
 func GetMimeType(path string) string {

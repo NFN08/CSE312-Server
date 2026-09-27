@@ -8,14 +8,14 @@ import (
 type Request struct {
 	method  string
 	path    string
-	headers []map[string]string
+	Headers []map[string]string
 	body    string
 	version string
 }
 
 // will have to change this for hw 3 to update parsing images/videos
 func Parse(request string, requestObj *Request) {
-	requestObj.headers = nil
+	requestObj.Headers = nil
 	i := 1
 	isBody := false
 	parts := strings.Split(request, "\r\n")
@@ -32,11 +32,11 @@ func Parse(request string, requestObj *Request) {
 			value = value [1:]
 
 		}
-		requestObj.headers = append(requestObj.headers, map[string]string{key: value})
+		requestObj.Headers = append(requestObj.Headers, map[string]string{key: value})
 		
 		if isBody != true {
-			for j := range requestObj.headers {
-				for key, _ := range requestObj.headers[j] {
+			for j := range requestObj.Headers {
+				for key, _ := range requestObj.Headers[j] {
 					if strings.ToLower(key) == "content-length" || strings.ToLower(key) == "transfer-encoding" {
 						isBody = true
 						length--
