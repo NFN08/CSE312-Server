@@ -254,12 +254,12 @@ function editMessage(messageId) {
 async function sendMessage(event) {
   event.preventDefault();
   const content = document.getElementById("new-message").value;
-
+  const xsrfToken = document.querySelector('meta[name="xsrf-token"]').content;
   try {
     const response = await fetch("/api/chats", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json", "X-XSRF-Token": xsrfToken
       },
       body: JSON.stringify({ content }),
     });
@@ -283,7 +283,8 @@ async function sendMessage(event) {
 
 async function deleteMessage(id) {
   try {
-    const response = await fetch(`/api/chats/${id}`, { method: "DELETE" });
+    const xsrfToken = document.querySelector('meta[name="xsrf-token"]').content;
+    const response = await fetch(`/api/chats/${id}`, { method: "DELETE", headers:{"X-XSRF-Token": xsrfToken} });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -306,11 +307,12 @@ async function deleteMessage(id) {
 }
 
 async function patchMessage(messageId, newContent) {
+  const xsrfToken = document.querySelector('meta[name="xsrf-token"]').content;
   try {
     const response = await fetch(`/api/chats/${messageId}`, {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json", "X-XSRF-Token": xsrfToken
       },
       body: JSON.stringify({ content: newContent }),
     });

@@ -1,9 +1,9 @@
 services:
   postgres:
     image: postgres
-    
+    # chnage this to 5433 when testing but put back to 5432 for submission
     ports:
-      - "5433:5432"
+      - "5432:5432"
 
     environment:
       POSTGRES_USER: ${LOCAL_DB_USER}
@@ -28,6 +28,8 @@ services:
       LOCAL_DB_USER: ${LOCAL_DB_USER}
       LOCAL_DB_PASSWORD: ${LOCAL_DB_PASSWORD}
       LOCAL_DB: ${CSE_312_DB}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
 
     ports:
       - "8080:8080"

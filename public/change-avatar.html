@@ -156,10 +156,14 @@
     }
 
     const formData = new FormData(form);
+    const xsrfToken = document.querySelector('meta[name="xsrf-token"]').content;
 
     try {
       const response = await fetch("/api/users/avatar", {
         method: "POST",
+        headers: {
+        "X-XSRF-Token": xsrfToken
+      },
         body: formData,
       });
 

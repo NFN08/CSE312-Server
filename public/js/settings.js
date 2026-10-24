@@ -32,7 +32,7 @@ async function fetchUserSettings() {
 
 async function handleSubmit(event) {
   event.preventDefault();
-
+   const xsrfToken = document.querySelector('meta[name="xsrf-token"]').content;
   const username = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
@@ -44,7 +44,7 @@ async function handleSubmit(event) {
     const response = await fetch("/api/users/settings", {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/x-www-form-urlencoded", "X-XSRF-Token": xsrfToken,
       },
       body: formData,
     });
@@ -77,7 +77,8 @@ const form = document.querySelector("form");
 
 // Show dialog
 enable2faBtn.addEventListener("click", async () => {
-  const response = await fetch("/api/totp/enable", { method: "POST" });
+  
+  const response = await fetch("/api/totp/enable", { method: "POST",});
   const totpBody = await response.json();
 
   if (!response.ok || !totpBody.secret) {
